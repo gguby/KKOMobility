@@ -25,12 +25,14 @@ class ViewModel: NSObject {
     private var currentCategory: CategoryGroup? = nil
     private var sections: [DocumentSection]!
     
+    // VC 에서 전달되는 Input
     struct Input {
         let category: Observable<CategoryGroup>
         let nextPage: Observable<Void>
         let refresh: Observable<Void>
     }
     
+    // VC 에 Binding 할 Output
     struct Output {
         let sectionModel: Observable<([DocumentSection], Bool)>
         let movedMap: Observable<Bool>
@@ -132,6 +134,9 @@ extension ViewModel: MTMapViewDelegate {
     }
 }
 
+// ViewController 의 Input Command
+// set: 초기페이지 로드
+// nextPage: 다음페이지 로드
 enum Command {
     case set(sections: ([DocumentSection], Bool))
     case nextPage(sections: ([DocumentSection], Bool))

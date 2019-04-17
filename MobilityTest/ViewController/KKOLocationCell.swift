@@ -8,7 +8,9 @@
 
 import Foundation
 
-class AddressTableViewCell: UITableViewCell {
+class KKOLocationCell: UITableViewCell {
+    
+    static let cellId = "KKOCell"
     
     private lazy var lblTitle: UILabel = {
         let label = UILabel()

@@ -9,15 +9,9 @@
 import UIKit
 import RxSwift
 import RxDataSources
-import ReusableKit
 import SnapKit
 
 class ViewController: UIViewController {
-    
-    private struct Reusable
-    {
-        static let cell = ReusableCell<AddressTableViewCell>()
-    }
     
     @IBOutlet var containerView: UIView!
     @IBOutlet var tableView: UITableView!
@@ -27,14 +21,10 @@ class ViewController: UIViewController {
     private var mapView: MTMapView!
     private var currentCircle: MTMapCircle?
     private let viewModel = ViewModel()
-    
-    private var currentPage = 1
-    private var oldCategory: String!
-    
+
     private var dataSource: RxTableViewSectionedReloadDataSource<DocumentSection>!
     private var disposeBag = DisposeBag()
-    
-    
+
     private lazy var btnRefresh: UIButton = {
         let btn = UIButton(type: .custom)
         btn.setImage(UIImage(named: "refresh"), for: .normal)
@@ -45,21 +35,18 @@ class ViewController: UIViewController {
     private lazy var btnHospital: UIButton = {
         let btn = UIButton(type: .custom)
         btn.setImage(UIImage(named: "hospi"), for: .normal)
-        btn.tag = 0
         return btn
     }()
     
     private lazy var btnPM: UIButton = {
         let btn = UIButton(type: .custom)
         btn.setImage(UIImage(named: "pham"), for: .normal)
-        btn.tag = 1
         return btn
     }()
     
     private lazy var btnOil: UIButton = {
         let btn = UIButton(type: .custom)
         btn.setImage(UIImage(named: "gas"), for: .normal)
-        btn.tag = 2
         return btn
     }()
     
@@ -82,19 +69,20 @@ class ViewController: UIViewController {
         mapView.delegate = viewModel
         mapView.baseMapType = .standard
         mapView.currentLocationTrackingMode = .onWithoutHeading
-//        mapView.showCurrentLocationMarker = true
         containerView.addSubview(mapView)
     }
     
     private func initCurrentCircle(point: MTMapPoint) {
-        if let _ = self.currentCircle {
-            mapView.removeCircle(self.currentCircle)
+        if let circle = self.currentCircle {
+            circle.circleCenterPoint = point
+            mapView.fitArea(toShow: currentCircle)
+            return
         }
         
         currentCircle = MTMapCircle()
         currentCircle?.circleLineColor = .white
         currentCircle?.circleFillColor = .red
-        currentCircle?.circleRadius = Float(self.mapView.zoomLevel * 15)
+        currentCircle?.circleRadius = Float(self.mapView.zoomLevel * 50)
         currentCircle?.circleCenterPoint = point
 
         mapView.addCircle(currentCircle)
@@ -136,58 +124,67 @@ class ViewController: UIViewController {
     
     private func initTableView() {
         tableView.tableFooterView = footerView
-        tableView.register(Reusable.cell)
-        tableView.rowHeight = 50
+        tableView.register(KKOLocationCell.self, forCellReuseIdentifier: KKOLocationCell.cellId)
+        tableView.rowHeight = 60
         
         dataSource = RxTableViewSectionedReloadDataSource<DocumentSection> (configureCell: { (_, tableView, indexPath, item)  in
-            let cell = tableView.dequeue(Reusable.cell, for: indexPath)
+            let cell = tableView.dequeueReusableCell(withIdentifier: KKOLocationCell.cellId, for: indexPath) as! KKOLocationCell
             cell.configure(document: item)
             return cell
         })
     }
     
     private func viewModelBind() {
+        
+        viewModel.didUpdateCircleLocation = { [weak self] point in
+            self?.initCurrentCircle(point: point)
+        }
     
         tableView.rx.itemSelected
             .asDriver()
             .drive(onNext: { [weak self] index in
-                guard let `self` = self else { return }
+                guard let self = self else { return }
                 self.tableView.deselectRow(at: index, animated: true)
             }).disposed(by: disposeBag)
-        
+       
         btnRefresh.rx.tap.subscribe(onNext: { [weak self] _ in
-            guard let `self` = self else { return }
+            guard let self = self else { return }
             self.mapView.removeAllPOIItems()
             self.btnRefresh.isHidden = true
             self.btnMore.isHidden = true
         }).disposed(by: disposeBag)
         
-        // Marker 이벤트
         let categoyGroup = Observable.merge(btnHospital.rx.tap.map { CategoryGroup.HP8 },
                                             btnPM.rx.tap.map { CategoryGroup.PM9 },
                                             btnOil.rx.tap.map { CategoryGroup.OL7 })
         
         let output = viewModel.transfrom(ViewModel.Input(category: categoyGroup,
                                                          nextPage: self.btnMore.rx.tap.map {()},
-                                                         refresh: self.btnRefresh.rx.tap.map{()}))
+                                                         refresh: self.btnRefresh.rx.tap.map {()} ))
         
         output.sectionModel
             .do(onNext: { [weak self] model in
                 guard let self = self else { return }
                 guard let section = model.0.first else { return }
+                
                 self.btnMore.isHidden = model.1
-                self.btnRefresh.isHidden = false
                 var items = [MTMapPOIItem]()
                 for document in section.items {
                     let poiItem = self.poiItem(name: document.placeName, latitude: document.y.toDouble()!, longitude: document.x.toDouble()!, category: CategoryGroup(rawValue: document.categoryGroupCode))
                     items.append(poiItem)
                 }
-                
                 self.mapView.addPOIItems(items)
             })
             .map { $0.0 }
             .bind(to: self.tableView.rx.items(dataSource: self.dataSource))
             .disposed(by: disposeBag)
+        
+        Observable.combineLatest(output.sectionModel.map { $0.0 },
+                                 output.movedMap ).map { (section, moved) in
+                return section.count > 0 && moved == true
+            }.subscribe(onNext: { isMoved in
+                self.btnRefresh.isHidden = !isMoved
+            }).disposed(by: disposeBag)
     }
 }
 

@@ -16,12 +16,11 @@ def shared_pods
     pod 'RxCocoa'
     
     # RX Extension
-    pod 'RxAlamofire'
+#    pod 'RxAlamofire'
     pod 'RxDataSources'    
     
     # UI
     pod 'SnapKit'
-    pod 'ReusableKit'
 
 end
 

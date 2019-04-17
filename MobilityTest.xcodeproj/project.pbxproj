@@ -22,7 +22,7 @@
 		A685DF11226584F3006316D4 /* KaKaoMapRestAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685DF08226584F3006316D4 /* KaKaoMapRestAPI.swift */; };
 		A685DF12226584F3006316D4 /* DocumentSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685DF0A226584F3006316D4 /* DocumentSection.swift */; };
 		A685DF13226584F3006316D4 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685DF0C226584F3006316D4 /* ViewController.swift */; };
-		A685DF14226584F3006316D4 /* AddressTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685DF0D226584F3006316D4 /* AddressTableViewCell.swift */; };
+		A685DF14226584F3006316D4 /* KKOLocationCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A685DF0D226584F3006316D4 /* KKOLocationCell.swift */; };
 		A685DF1822658525006316D4 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A685DF1722658525006316D4 /* Assets.xcassets */; };
 		A685E01722659040006316D4 /* map_pinup_custom@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = A685DFF122659040006316D4 /* map_pinup_custom@3x.png */; };
 		A685E01822659040006316D4 /* map_pin_custom.png in Resources */ = {isa = PBXBuildFile; fileRef = A685DFF222659040006316D4 /* map_pin_custom.png */; };
@@ -78,7 +78,7 @@
 		A685DF08226584F3006316D4 /* KaKaoMapRestAPI.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KaKaoMapRestAPI.swift; sourceTree = "<group>"; };
 		A685DF0A226584F3006316D4 /* DocumentSection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentSection.swift; sourceTree = "<group>"; };
 		A685DF0C226584F3006316D4 /* ViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
-		A685DF0D226584F3006316D4 /* AddressTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AddressTableViewCell.swift; sourceTree = "<group>"; };
+		A685DF0D226584F3006316D4 /* KKOLocationCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = KKOLocationCell.swift; sourceTree = "<group>"; };
 		A685DF1722658525006316D4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A685DFF122659040006316D4 /* map_pinup_custom@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "map_pinup_custom@3x.png"; sourceTree = "<group>"; };
 		A685DFF222659040006316D4 /* map_pin_custom.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = map_pin_custom.png; sourceTree = "<group>"; };
@@ -250,7 +250,7 @@
 			isa = PBXGroup;
 			children = (
 				A685DF0C226584F3006316D4 /* ViewController.swift */,
-				A685DF0D226584F3006316D4 /* AddressTableViewCell.swift */,
+				A685DF0D226584F3006316D4 /* KKOLocationCell.swift */,
 			);
 			path = ViewController;
 			sourceTree = "<group>";
@@ -447,8 +447,6 @@
 				"${BUILT_PRODUCTS_DIR}/Differentiator/Differentiator.framework",
 				"${BUILT_PRODUCTS_DIR}/Moya/Moya.framework",
 				"${BUILT_PRODUCTS_DIR}/Result/Result.framework",
-				"${BUILT_PRODUCTS_DIR}/ReusableKit/ReusableKit.framework",
-				"${BUILT_PRODUCTS_DIR}/RxAlamofire/RxAlamofire.framework",
 				"${BUILT_PRODUCTS_DIR}/RxCocoa/RxCocoa.framework",
 				"${BUILT_PRODUCTS_DIR}/RxDataSources/RxDataSources.framework",
 				"${BUILT_PRODUCTS_DIR}/RxSwift/RxSwift.framework",
@@ -462,8 +460,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Differentiator.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Moya.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Result.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReusableKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxAlamofire.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxCocoa.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxDataSources.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxSwift.framework",
@@ -486,7 +482,7 @@
 				A685DF0E226584F3006316D4 /* ViewModel.swift in Sources */,
 				A685DF0F226584F3006316D4 /* CategoryResponse.swift in Sources */,
 				A685DE082265766D006316D4 /* AppDelegate.swift in Sources */,
-				A685DF14226584F3006316D4 /* AddressTableViewCell.swift in Sources */,
+				A685DF14226584F3006316D4 /* KKOLocationCell.swift in Sources */,
 				A685DF13226584F3006316D4 /* ViewController.swift in Sources */,
 				A685DF10226584F3006316D4 /* NetworkProvider.swift in Sources */,
 			);

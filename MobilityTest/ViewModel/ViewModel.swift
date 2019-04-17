@@ -13,12 +13,16 @@ class ViewModel: NSObject {
     
     private let provider: NetworkProvider = NetworkProvider()
     
+    // Delegate 전달용 클로저
     var didUpdateCircleLocation: ((MTMapPoint) -> ())?
-    var didUpdateLocation: ((MTMapPoint) -> ())?
     
+    // State
     private var mapPointSubject = PublishSubject<(MTMapPoint, Int)>()
+    private var movedMapSubject = PublishSubject<Bool>()
+    private var selectItemSuject = PublishSubject<Void>()
     private var disposeBag = DisposeBag()
-    private var isEnd = false
+
+    private var currentCategory: CategoryGroup? = nil
     private var sections: [DocumentSection]!
     
     struct Input {
@@ -29,16 +33,25 @@ class ViewModel: NSObject {
     
     struct Output {
         let sectionModel: Observable<([DocumentSection], Bool)>
+        let movedMap: Observable<Bool>
     }
     
     func transfrom(_ input: Input) -> Output {
-        
         let next = input.nextPage.scan(1) { (page,_) -> Int in
             return page + 1
             }.map { $0 }
         
-        let setCommand = input.category.withLatestFrom(mapPointSubject) { (category, point) -> Observable<([DocumentSection],Bool)> in
+        let category = input.category.do(onNext: { [unowned self] (category) in
+            self.currentCategory = category
+        })
+        
+        let refresh = Observable.merge(input.refresh, selectItemSuject.asObservable()).do(onNext: { [unowned self]_ in
+            self.movedMapSubject.onNext(false)
+        })
+        
+        let setCommand = category.withLatestFrom(mapPointSubject) { [unowned self] (category, point) -> Observable<([DocumentSection],Bool)> in
             return self.provider.category(category, point.0, point.1, 1).map({ (response) -> ([DocumentSection],Bool) in
+                self.movedMapSubject.onNext(false)
                 var sections = [DocumentSection]()
                 let section = DocumentSection(items: response.documents)
                 sections.append(section)
@@ -48,7 +61,7 @@ class ViewModel: NSObject {
         
         let nextCommand = Observable.combineLatest(next,
                                                    mapPointSubject.asObservable())
-            .withLatestFrom(input.category) { (arg0, category) -> Observable<([DocumentSection],Bool)> in
+            .withLatestFrom(input.category) { [unowned self] (arg0, category) -> Observable<([DocumentSection],Bool)> in
                 let (next, point) = arg0
                 return self.provider.category(category, point.0, point.1, next).map({ response -> ([DocumentSection],Bool) in
                     var sections = [DocumentSection]()
@@ -58,12 +71,20 @@ class ViewModel: NSObject {
                 })
             }.flatMap { $0 }.map { Command.nextPage(sections: $0)}
                                             
-        let refreshCommnad = input.refresh.map { Command.refresh }
+        let refreshCommnad = refresh.withLatestFrom(mapPointSubject).map { [unowned self] (point, radius) -> Observable<([DocumentSection],Bool)> in
+            return self.provider.category(self.currentCategory ?? CategoryGroup.HP8, point, radius, 1).map({ response -> ([DocumentSection],Bool) in
+                var sections = [DocumentSection]()
+                let section = DocumentSection(items: response.documents)
+                sections.append(section)
+                return (sections, response.meta.isEnd)
+            })
+            }.flatMap { $0 }.map { Command.set(sections: $0) }
         
         let sectionModel = Observable.merge(setCommand, nextCommand, refreshCommnad)
             .scan(([DocumentSection](), false)) { self.excute(command: $1) }
         
-        return Output(sectionModel: sectionModel)
+        return Output(sectionModel: sectionModel,
+                      movedMap: self.movedMapSubject.asObservable() )
     }
     
     func excute(command: Command) -> ([DocumentSection],Bool) {
@@ -83,9 +104,6 @@ class ViewModel: NSObject {
             }
             
             return (self.sections, false)
-        case .refresh:
-            self.sections.removeAll()
-            return ([], false)
         }
     }
 }
@@ -93,15 +111,11 @@ class ViewModel: NSObject {
 extension ViewModel: MTMapViewDelegate {
     func mapView(_ mapView: MTMapView!, zoomLevelChangedTo zoomLevel: MTMapZoomLevel) {
         self.mapPointSubject.onNext((mapView.mapCenterPoint, Int(mapView.zoomLevel * 1000)))
-        
     }
     
     func mapView(_ mapView: MTMapView!, centerPointMovedTo mapCenterPoint: MTMapPoint!) {
         self.mapPointSubject.onNext((mapView.mapCenterPoint, Int(mapView.zoomLevel * 1000)))
-    }
-    
-    func mapView(_ mapView: MTMapView!, finishedMapMoveAnimation mapCenterPoint: MTMapPoint!) {
-        
+        self.movedMapSubject.onNext(true)
     }
     
     func mapView(_ mapView: MTMapView!, updateCurrentLocation location: MTMapPoint!, withAccuracy accuracy: MTMapLocationAccuracy) {
@@ -109,10 +123,16 @@ extension ViewModel: MTMapViewDelegate {
         mapView.setZoomLevel(3, animated: true)
         self.mapPointSubject.onNext((location, Int(mapView.zoomLevel * 1000)))
     }
+    
+    func mapView(_ mapView: MTMapView!, selectedPOIItem poiItem: MTMapPOIItem!) -> Bool {
+        mapView.setMapCenter(poiItem.mapPoint, animated: true)
+        self.mapPointSubject.onNext((poiItem.mapPoint, Int(mapView.zoomLevel * 1000)))
+        self.selectItemSuject.onNext(())
+        return true
+    }
 }
 
 enum Command {
     case set(sections: ([DocumentSection], Bool))
     case nextPage(sections: ([DocumentSection], Bool))
-    case refresh
 }

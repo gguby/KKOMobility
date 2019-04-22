@@ -51,36 +51,36 @@ class ViewModel: NSObject {
             self.movedMapSubject.onNext(false)
         })
         
-        let setCommand = category.withLatestFrom(mapPointSubject) { [unowned self] (category, point) -> Observable<([DocumentSection],Bool)> in
-            return self.provider.category(category, point.0, point.1, 1).map({ (response) -> ([DocumentSection],Bool) in
+        let setCommand = category.withLatestFrom(mapPointSubject) { ($0, $1) }.flatMap {
+            self.provider.category($0.0, $0.1.0, $0.1.1, 1)
+            }.map { (response) -> Command in
                 self.movedMapSubject.onNext(false)
                 var sections = [DocumentSection]()
                 let section = DocumentSection(items: response.documents)
                 sections.append(section)
-                return (sections, false)
-            })
-            }.flatMap{ $0 }.map { Command.set(sections: $0) }
+                return Command.set(sections: (sections, false))
+        }
         
         let nextCommand = Observable.combineLatest(next,
-                                                   mapPointSubject.asObservable())
-            .withLatestFrom(input.category) { [unowned self] (arg0, category) -> Observable<([DocumentSection],Bool)> in
-                let (next, point) = arg0
-                return self.provider.category(category, point.0, point.1, next).map({ response -> ([DocumentSection],Bool) in
-                    var sections = [DocumentSection]()
-                    let section = DocumentSection(items: response.documents)
-                    sections.append(section)
-                    return (sections, response.meta.isEnd)
-                })
-            }.flatMap { $0 }.map { Command.nextPage(sections: $0)}
-                                            
-        let refreshCommnad = refresh.withLatestFrom(mapPointSubject).map { [unowned self] (point, radius) -> Observable<([DocumentSection],Bool)> in
-            return self.provider.category(self.currentCategory ?? CategoryGroup.HP8, point, radius, 1).map({ response -> ([DocumentSection],Bool) in
+                                         mapPointSubject.asObservable())
+            .withLatestFrom(input.category) { ($0, $1) }
+            .flatMap { self.provider.category($0.1, $0.0.1.0, $0.0.1.1, $0.0.0)}
+            .map { response -> Command in
                 var sections = [DocumentSection]()
                 let section = DocumentSection(items: response.documents)
                 sections.append(section)
-                return (sections, response.meta.isEnd)
-            })
-            }.flatMap { $0 }.map { Command.set(sections: $0) }
+                return Command.nextPage(sections: (sections, response.meta.isEnd))
+        }
+        
+        let refreshCommnad = refresh.withLatestFrom(mapPointSubject)
+            .flatMap { self.provider.category(self.currentCategory ?? CategoryGroup.HP8, $0.0, $0.1, 1) }
+            .map { response -> Command in
+                var sections = [DocumentSection]()
+                let section = DocumentSection(items: response.documents)
+                sections.append(section)
+                return Command.set(sections: (sections, response.meta.isEnd))
+            }
+        
         
         let sectionModel = Observable.merge(setCommand, nextCommand, refreshCommnad)
             .scan(([DocumentSection](), false)) { self.excute(command: $1) }
